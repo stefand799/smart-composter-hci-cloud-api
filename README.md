@@ -3,7 +3,7 @@
 Steps to deploy the app
 
 1. Clone the repository<br>
-2. In root directory run the commands<br>
+2. In cmd inside root directory run the commands<br>
     `python3 -m venv venv` <br>
     `source venv/bin/activate`<br>
     `pip install -r requirements.txt`<br>
