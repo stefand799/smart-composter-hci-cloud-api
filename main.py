@@ -1,4 +1,7 @@
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request, Form
+from fastapi.templating import Jinja2Templates
+from starlette.responses import HTMLResponse, RedirectResponse
+from starlette import status
 from pydantic import BaseModel
 from model_loader import generate_text
 import json
@@ -21,6 +24,10 @@ DEFAULT_SENSOR_DATA = {
     "mq1_percent": 15.0,
     "mq2_percent": 5.0          
 }
+
+# Varaibles for UI testing
+templates = Jinja2Templates(directory="templates") 
+chat_history = []
 
 # Definition of the App
 app = FastAPI(title="ESP32 Sensor + Chatbot API with API Key")
@@ -110,3 +117,58 @@ async def chat(req: ChatRequest, x_api_key: str = Header(...)):
         final_reply = raw_reply.strip() 
         
     return {"response": final_reply}
+    
+# Shows html page
+@app.get("/chat-ui", response_class=HTMLResponse)
+async def chat_ui(request: Request):
+
+    return templates.TemplateResponse(
+        "chat_interface.html",
+        {
+            "request": request,
+            "sensor_data": sensor_data,
+            "history": chat_history
+        }
+    )
+
+# Send prompt on the ui interface
+@app.post("/chat-ui")
+async def handle_chat_form(
+    user_message: str = Form(...),
+    api_key_field: str = Form(..., alias="x_api_key_input")
+):
+    verify_api_key(api_key_field)
+
+    global sensor_data
+    global chat_history
+    
+    sensor_data_str = json.dumps(sensor_data) if isinstance(sensor_data, dict) else str(sensor_data)
+
+    prompt = (
+        "TASK: You are Compost Master 5000, an AI expert. Analyze sensor data ONLY and provide concise, actionable advice (e.g., 'Add water', 'Turn the pile').\n\n"
+        "Optimal Ranges:\n"
+        f"Temp: 55-65°C (Crit: <40°C Cool | >70°C Hot)\n"
+        f"Moisture: 40-60% (Crit: <40% Dry | >65% Wet)\n"
+        f"Aeration (MQ): High MQ1/MQ2 (>800) suggests anaerobic decay (Needs Oxygen).\n\n"
+        f"DATA:\n{sensor_data_str}\n"
+        f"QUERY: {user_message}\n\n"
+        "Based on DATA and Optimal Ranges, provide ONLY a single, actionable instruction or brief status.\n"
+        "ACTIONABLE ADVICE: "
+    )
+    
+    raw_reply = generate_text(prompt)
+    
+    MARKER = "ACTIONABLE ADVICE: "
+    
+    if MARKER in raw_reply:
+        final_reply = raw_reply.split(MARKER, 1)[-1].strip()
+    else:
+        final_reply = raw_reply.strip() 
+    
+    chat_history.append({"sender": "User", "message": user_message})
+    chat_history.append({"sender": "AI", "message": final_reply})
+    
+    return RedirectResponse(
+        url="/chat-ui", 
+        status_code=status.HTTP_303_SEE_OTHER
+    )

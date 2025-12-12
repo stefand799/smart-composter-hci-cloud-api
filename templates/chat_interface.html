@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Compost Master 5000 Chat UI</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: auto; padding: 20px; }
+        .message-container { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+        .user { background-color: #e6f7ff; text-align: right; }
+        .ai { background-color: #f0f0f0; text-align: left; }
+        h2 { border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        pre { background: #f9f9f9; padding: 10px; border: 1px dashed #ddd; }
+    </style>
+</head>
+<body>
+    <h1>Compost Master 5000 (Test Interface)</h1>
+    
+    <h2>Sensors current data:</h2>
+    <pre>{{ sensor_data | tojson(indent=2) }}</pre>
+
+    <h2>Conversation history:</h2>
+    {% for entry in history %}
+        <div class="message-container {{ 'user' if entry.sender == 'User' else 'ai' }}">
+            <strong>{{ entry.sender }}:</strong> {{ entry.message }}
+        </div>
+    {% endfor %}
+
+    <hr>
+    
+    <h2>Send message:</h2>
+    <form method="POST" action="/chat-ui"> 
+    <input type="password" name="x_api_key_input" placeholder="API key (Required)" size="80" required>
+        <input type="text" name="user_message" size="80" placeholder="Ask something about the composter..." required>
+        <button type="submit">Send</button>
+    </form>
+</body>
+</html>

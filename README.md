@@ -11,9 +11,10 @@ Steps to deploy the app
     `API_KEY="your_secret_key"`
 4. To run for local testing use this command in root directory
     `uvicorn main:app --host 127.0.0.1 --port 8000`
-5. To run on the server use this command in the root directory
+    
+(To run on the server use this command in the root directory
     `uvicorn main:app --host 0.0.0.0 --port 8000`
-
+)
 
 # Swagger route
 http://SERVER_HOST:PORT/docs
